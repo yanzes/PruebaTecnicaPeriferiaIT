@@ -1,0 +1,24 @@
+{
+  "name": "reto-02-periferia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reto 2 - Gestión Inteligente de Contratos y Buzón de Entrada (Periferia IT Group)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "demo": "tsx demo.ts",
+    "client": "tsx src/client/server.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

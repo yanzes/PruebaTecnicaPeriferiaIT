@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Estado generado en tiempo de ejecución (regenerable desde la semilla)
+fixtures/reto-02/maestro-contratos.csv
+fixtures/reto-02/operaciones.jsonl
+fixtures/reto-02/hitl-pendientes.json
+
+# Metadata del entorno local
+.freebuff/

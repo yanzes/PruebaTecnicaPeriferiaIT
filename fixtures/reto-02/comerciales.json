@@ -1,0 +1,22 @@
+{
+  "asesores": [
+    {
+      "email": "carlos.martinez@periferia.com",
+      "nombre_completo": "Carlos Martínez Ríos",
+      "zona": "Bogotá",
+      "activo": true
+    },
+    {
+      "email": "ana.gomez@periferia.com",
+      "nombre_completo": "Ana Gómez Torres",
+      "zona": "Medellín",
+      "activo": true
+    },
+    {
+      "email": "jose.rodriguez@periberia.com",
+      "nombre_completo": "José Rodríguez Peña",
+      "zona": "Cali",
+      "activo": true
+    }
+  ]
+}

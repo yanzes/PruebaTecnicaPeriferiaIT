@@ -1,0 +1,4 @@
+id,cliente,nit,asesor_email,valor_mensual_cop,monto_total_cop,fecha_inicio,fecha_fin,estado,tipo
+CT-2024-001,Acme Retail S.A.S.,900123456-1,carlos.martinez@periferia.com,12000000,144000000,2024-02-01,2026-01-31,ACTIVO,BASE
+CT-2024-002,Globant Media Ltda,901222333-4,ana.gomez@periferia.com,8000000,76800000,2024-05-01,2025-04-30,ACTIVO,BASE
+CT-2024-003,Andina Logística S.A.,830112233-5,jose.rodriguez@periferia.com,15000000,180000000,2024-08-01,2026-07-31,ACTIVO,BASE

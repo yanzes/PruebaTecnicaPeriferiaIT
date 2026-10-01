@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Periferia · Agente de Contratos</title>
+<style>
+  :root {
+    --fondo: #0f1420; --panel: #161d2e; --panel2: #1c2540; --borde: #2a3552;
+    --texto: #e8ecf5; --texto2: #93a0bd; --acento: #4f8cff; --verde: #35c28f; --amarillo: #e5b74f; --rojo: #e2606a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--fondo); color: var(--texto); }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--borde); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; }
+  .insignia { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--borde); }
+  main { display: grid; grid-template-columns: 300px 1fr 380px; gap: 14px; padding: 14px; height: calc(100vh - 58px); }
+  .columna { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .panel > h2 { margin: 0; padding: 10px 14px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--texto2); border-bottom: 1px solid var(--borde); }
+  .panel .cuerpo { overflow: auto; padding: 12px; flex: 1; }
+  .msg { border: 1px solid var(--borde); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s; }
+  .msg:hover, .msg.activa { border-color: var(--acento); }
+  .msg .id { font-weight: 700; font-size: 13px; }
+  .msg .asunto { font-size: 12px; color: var(--texto2); margin-top: 2px; }
+  .tl-item { border-left: 2px solid var(--borde); margin-left: 6px; padding: 4px 0 4px 12px; position: relative; }
+  .tl-item::before { content: ""; position: absolute; left: -5px; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--borde); }
+  .tl-item.herramienta::before { background: var(--acento); }
+  .tl-item.ok::before { background: var(--verde); }
+  .tl-item.advertencia::before { background: var(--amarillo); }
+  .tl-item.error::before { background: var(--rojo); }
+  .tl-item .titulo { font-size: 12.5px; font-weight: 600; }
+  .tl-item .detalle { font-size: 11.5px; color: var(--texto2); white-space: pre-wrap; word-break: break-word; }
+  .tarjeta-hitl { border: 1px solid var(--amarillo); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: rgba(229,183,79,0.06); }
+  .tarjeta-hitl .riesgos { margin: 6px 0; padding-left: 18px; font-size: 12px; color: var(--texto2); }
+  .tarjeta-hitl .acciones { display: flex; gap: 8px; margin-top: 8px; }
+  button { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--borde); background: var(--panel2); color: var(--texto); cursor: pointer; }
+  button.primario { background: var(--acento); border-color: var(--acento); }
+  button.peligro { background: transparent; border-color: var(--rojo); color: var(--rojo); }
+  table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--borde); white-space: nowrap; }
+  th { color: var(--texto2); font-weight: 600; }
+  .etiqueta { font-size: 10.5px; padding: 1px 7px; border-radius: 9px; background: var(--panel2); border: 1px solid var(--borde); }
+  .etiqueta.verde { color: var(--verde); border-color: var(--verde); }
+  .etiqueta.amarillo { color: var(--amarillo); border-color: var(--amarillo); }
+  .etiqueta.rojo { color: var(--rojo); border-color: var(--rojo); }
+  .fila-chat { border-bottom: 1px solid var(--borde); padding: 8px 0; font-size: 12.5px; }
+  .fila-chat .rol { font-weight: 700; font-size: 11px; color: var(--texto2); text-transform: uppercase; }
+  .pie { padding: 10px; border-top: 1px solid var(--borde); display: flex; gap: 8px; }
+  .pie input { flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--borde); background: var(--panel2); color: var(--texto); font: inherit; min-width: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Agente de Contratos — Periferia IT Group</h1>
+  <span class="insignia" id="insignia-modo">LLM: …</span>
+  <span style="flex:1"></span>
+  <button id="btn-reiniciar" title="Restaura el maestro a la semilla">Reiniciar maestro</button>
+</header>
+<main>
+  <!-- Columna 1: buzón -->
+  <section class="panel">
+    <h2>Buzón de entrada</h2>
+    <div class="cuerpo" id="buzon-lista"></div>
+    <div class="pie">
+      <input id="entrada-libre" placeholder="msg-001…msg-006"/>
+      <button class="primario" id="btn-procesar">Procesar</button>
+    </div>
+  </section>
+
+  <!-- Columna 2: chat + timeline -->
+  <section class="panel">
+    <h2>Conversación y llamadas a herramientas</h2>
+    <div class="cuerpo" id="chat-respuesta">
+      <p class="tl-item .detalle" style="font-size:12px;color:var(--texto2)">Selecciona un mensaje del buzón y pulsa «Procesar».</p>
+    </div>
+  </section>
+
+  <!-- Columna 3: HITL + maestro -->
+  <div class="columna">
+    <section class="panel" style="flex:1">
+      <h2>Confirmaciones humanas (HITL)</h2>
+      <div class="cuerpo" id="hitl-lista"></div>
+    </section>
+    <section class="panel" style="flex:1">
+      <h2>Maestro de contratos</h2>
+      <div class="cuerpo">
+        <table id="tabla-maestro"></table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+'use strict';
+var $ = function (sel) { return document.querySelector(sel); };
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+  });
+}
+function fmt(n) { return Number(n).toLocaleString('es-CO'); }
+
+function api(ruta, opciones) {
+  return fetch(ruta, opciones).then(function (r) { return r.json(); });
+}
+
+/* ---------- Carga inicial ---------- */
+function refrescarEstado() {
+  return api('/api/estado').then(function (estado) {
+    $('#insignia-modo').textContent = 'LLM: ' + estado.modo_llm;
+    var lista = $('#buzon-lista');
+    lista.innerHTML = '';
+    estado.buzon.data.forEach(function (m) {
+      var div = document.createElement('div');
+      div.className = 'msg';
+      div.dataset.id = m.id;
+      div.innerHTML = '<div class="id">' + esc(m.id) + '</div>' +
+        '<div class="asunto">' + esc(m.asunto) + '</div>' +
+        '<div class="asunto">' + esc(m.de) + '</div>';
+      div.onclick = function () {
+        $('#entrada-libre').value = m.id;
+        document.querySelectorAll('.msg').forEach(function (x) { x.classList.remove('activa'); });
+        div.classList.add('activa');
+      };
+      lista.appendChild(div);
+    });
+    renderMaestro(estado.maestro);
+    renderHitl(estado.hitl);
+  }).catch(function (e) {
+    console.error('No se pudo cargar el estado', e);
+  });
+}
+
+/* ---------- Chat / timeline ---------- */
+function agregarLineaChat(rol, textoHtml) {
+  var cont = $('#chat-respuesta');
+  cont.insertAdjacentHTML('beforeend',
+    '<div class="fila-chat"><div class="rol">' + esc(rol) + '</div><div>' + textoHtml + '</div></div>');
+  cont.scrollTop = cont.scrollHeight;
+}
+
+function agregarEventoTimeline(e) {
+  var titulo = '', detalle = '', clase = '';
+  var d = e.data || {};
+  switch (e.tipo) {
+    case 'turno_inicio':
+      titulo = '▶ Turno iniciado (' + (e.mensaje_id || '') + ')'; break;
+    case 'extraccion':
+      titulo = '🧠 Extracción — ' + d.tipo_operacion + ' · confianza global ' + Number(d.confianza_global).toFixed(2);
+      var partes = [];
+      Object.keys(d.confianza_campos || {}).forEach(function (k) {
+        partes.push(k + ': ' + Number(d.confianza_campos[k]).toFixed(2));
+      });
+      detalle = partes.join('\n');
+      if (d.notas && d.notas.length) detalle += '\n⚠ ' + d.notas.join('\n⚠ ');
+      clase = 'herramienta'; break;
+    case 'tool_call':
+      titulo = '🛠 ' + d.herramienta + '() llamada';
+      detalle = JSON.stringify(d.args, null, 1);
+      clase = 'herramienta'; break;
+    case 'tool_result': {
+      var ok = d.resultado && d.resultado.ok !== false;
+      titulo = (ok ? '✔ ' : '✖ ') + d.herramienta + '() resultado';
+      detalle = JSON.stringify(d.resultado, null, 1);
+      clase = ok ? 'ok' : 'error'; break;
+    }
+    case 'confianza':
+      titulo = '📈 Confianza ' + Number(d.global).toFixed(2); clase = 'herramienta'; break;
+    case 'clasificacion':
+      titulo = '🎯 ' + d.clasificacion + ' · nivel ' + d.nivel + ' (' + Number(d.confianza).toFixed(2) + ')';
+      detalle = d.justificacion || '';
+      clase = d.nivel === 'ALTA' ? 'ok' : (d.nivel === 'MEDIA' ? 'advertencia' : 'error'); break;
+    case 'hitl_request':
+      titulo = '🙋 HITL ' + d.id + ' solicitada (' + d.mensaje_id + ')';
+      detalle = d.resumen || '';
+      clase = 'advertencia'; break;
+    case 'hitl_resuelta':
+      titulo = '🙋 HITL ' + (d.id || '') + ' → ' + (d.aprobada === false ? 'RECHAZADA' : (d.estado || 'APROBADA'));
+      clase = d.aprobada === false ? 'error' : 'ok'; break;
+    case 'decision':
+      titulo = '⚖ Decisión: ' + d.accion; detalle = d.justificacion || ''; break;
+    case 'turno_fin':
+      titulo = '■ Turno completado'; detalle = JSON.stringify(d); clase = 'ok'; break;
+    case 'error':
+      titulo = '⛔ Error'; detalle = JSON.stringify(d); clase = 'error'; break;
+    default:
+      titulo = e.tipo;
+  }
+  var hora = new Date(e.timestamp || Date.now()).toLocaleTimeString('es-CO');
+  $('#chat-respuesta').insertAdjacentHTML('beforeend',
+    '<div class="tl-item ' + clase + '"><div class="titulo">' + esc(hora + ' — ' + titulo) + '</div>' +
+    '<div class="detalle">' + esc(detalle) + '</div></div>');
+  var cont = $('#chat-respuesta');
+  cont.scrollTop = cont.scrollHeight;
+}
+
+/* ---------- HITL ---------- */
+function renderHitl(solicitudes) {
+  if (!solicitudes) {
+    api('/api/estado').then(function (estado) { renderHitl(estado.hitl); });
+    return;
+  }
+  var cont = $('#hitl-lista');
+  cont.innerHTML = '';
+  var pendientes = solicitudes.filter(function (s) { return s.estado === 'PENDIENTE'; });
+  var resueltas = solicitudes.filter(function (s) { return s.estado !== 'PENDIENTE'; }).slice(-5);
+  if (pendientes.length === 0) {
+    cont.insertAdjacentHTML('beforeend', '<p style="font-size:12px;color:var(--texto2)">Sin confirmaciones pendientes.</p>');
+  }
+  pendientes.forEach(function (s) {
+    var ex = s.extraccion;
+    var filasExtraccion = '';
+    if (ex) {
+      filasExtraccion = '<ul class="riesgos">' +
+        '<li>cliente: ' + esc(ex.cliente || '—') + '</li>' +
+        '<li>nit: ' + esc(ex.nit || '—') + '</li>' +
+        '<li>mensual: ' + (ex.valor_mensual_cop ? fmt(ex.valor_mensual_cop) : '—') + '</li>' +
+        '<li>vigencia: ' + esc(ex.fecha_inicio || '—') + ' → ' + esc(ex.fecha_fin || '—') + '</li>' +
+        '</ul>';
+    }
+    var riesgos = (s.riesgos || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+    cont.insertAdjacentHTML('beforeend',
+      '<div class="tarjeta-hitl">' +
+      '<div><b>' + esc(s.id) + '</b> · ' + esc(s.tipo) + ' · msg ' + esc(s.mensaje_id) + '</div>' +
+      '<div style="font-size:12px;color:var(--texto2);margin-top:4px">' + esc(s.resumen) + '</div>' +
+      filasExtraccion +
+      (riesgos ? '<ul class="riesgos">' + riesgos + '</ul>' : '') +
+      '<div class="acciones">' +
+      '<button class="primario" data-id="' + esc(s.id) + '" data-aprobar="1">Aprobar</button>' +
+      '<button class="peligro" data-id="' + esc(s.id) + '" data-aprobar="0">Rechazar</button>' +
+      '</div></div>');
+  });
+  resueltas.forEach(function (s) {
+    var cls = s.estado === 'APROBADA' ? 'verde' : 'rojo';
+    cont.insertAdjacentHTML('beforeend',
+      '<div class="tarjeta-hitl" style="opacity:.65">' +
+      '<b>' + esc(s.id) + '</b> <span class="etiqueta ' + cls + '">' + esc(s.estado) + '</span>' +
+      ' · msg ' + esc(s.mensaje_id) + '</div>');
+  });
+  cont.querySelectorAll('button[data-id]').forEach(function (btn) {
+    btn.onclick = function () {
+      resolverHitl(btn.dataset.id, btn.dataset.aprobar === '1');
+    };
+  });
+}
+
+function resolverHitl(id, aprobar) {
+  api('/api/hitl', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: id, aprobar: aprobar })
+  }).then(function () { return refrescarEstado(); });
+}
+
+/* ---------- Maestro ---------- */
+function renderMaestro(contratos) {
+  var t = $('#tabla-maestro');
+  var cabecera = '<tr><th>ID</th><th>Cliente</th><th>v</th><th>Estado</th><th>Mensual</th><th>Total</th><th>Fin</th></tr>';
+  var filas = contratos.map(function (ct) {
+    var cls = ct.estado === 'ACTIVO' ? 'verde' : (ct.estado === 'MODIFICADO' ? 'amarillo' : 'rojo');
+    return '<tr><td><b>' + esc(ct.id) + '</b></td><td>' + esc(ct.cliente) + '</td>' +
+      '<td>v' + esc(ct.version) + '</td>' +
+      '<td><span class="etiqueta ' + cls + '">' + esc(ct.estado) + '</span></td>' +
+      '<td>' + fmt(ct.valor_mensual_cop) + '</td><td>' + fmt(ct.monto_total_cop) + '</td>' +
+      '<td>' + esc(ct.fecha_fin) + '</td></tr>';
+  }).join('');
+  t.innerHTML = cabecera + filas;
+}
+
+/* ---------- Acciones ---------- */
+function procesar(id) {
+  var idLimpio = id || $('#entrada-libre').value.trim();
+  if (!/^msg-\d{3}$/.test(idLimpio)) {
+    alert('Escribe un id válido (msg-001…msg-006)');
+    return;
+  }
+  $('#chat-respuesta').innerHTML = '';
+  agregarLineaChat('usuario', 'Procesar ' + esc(idLimpio));
+  api('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mensaje_id: idLimpio })
+  }).then(function (r) {
+    if (!r.ok) {
+      agregarLineaChat('error', 'Error: ' + esc(r.error));
+      return;
+    }
+    agregarLineaChat('agente',
+      '<b>' + esc(r.resultado.clasificacion) + '</b> · confianza ' +
+      Number(r.resultado.confianza).toFixed(2) + ' — ' + esc(r.resultado.justificacion));
+    return refrescarEstado();
+  }).catch(function (e) {
+    agregarLineaChat('error', 'Fallo de red: ' + esc(String(e)));
+  });
+}
+
+function reiniciarMaestro() {
+  api('/api/reiniciar', { method: 'POST' }).then(function () { return refrescarEstado(); });
+}
+
+/* ---------- SSE ---------- */
+var fuente = new EventSource('/api/events');
+fuente.addEventListener('agente_evento', function (ev) {
+  try { agregarEventoTimeline(JSON.parse(ev.data)); } catch (e) { console.error(e); }
+});
+fuente.addEventListener('hitl_request', function (ev) {
+  try {
+    var solicitud = JSON.parse(ev.data);
+    agregarEventoTimeline({ tipo: 'hitl_request', data: solicitud, timestamp: new Date().toISOString(), mensaje_id: solicitud.mensaje_id });
+    renderHitl(null);
+  } catch (e) { console.error(e); }
+});
+fuente.addEventListener('hitl_resuelta', function (ev) {
+  try {
+    var solicitud = JSON.parse(ev.data);
+    agregarEventoTimeline({ tipo: 'hitl_resuelta', data: solicitud, timestamp: new Date().toISOString(), mensaje_id: solicitud.mensaje_id });
+    renderHitl(null);
+  } catch (e) { console.error(e); }
+});
+
+window.addEventListener('DOMContentLoaded', function () {
+  refrescarEstado();
+  $('#btn-procesar').onclick = function () { procesar($('#entrada-libre').value.trim()); };
+  $('#entrada-libre').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') procesar($('#entrada-libre').value.trim());
+  });
+  $('#btn-reiniciar').onclick = reiniciarMaestro;
+});
+</script>
+</body>
+</html>
